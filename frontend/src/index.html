@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-помощник Сбера - Клиентский портал</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fdf9 0%, #f0f9f2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        /* Шапка в стиле Сбера */
+        .sber-header {
+            background: linear-gradient(to right, #1a7c48, #22a45a);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(26, 124, 72, 0.2);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            font-size: 28px;
+            background: white;
+            color: #22a45a;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: white;
+            color: #22a45a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        /* Основной контейнер */
+        .main-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+        
+        /* Панель выбора сценария */
+        .scenario-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            height: fit-content;
+        }
+        
+        .scenario-panel h2 {
+            color: #1a7c48;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f5f1;
+        }
+        
+        .scenario-card {
+            background: #f8fdf9;
+            border: 2px solid #e8f5e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .scenario-card:hover {
+            transform: translateY(-3px);
+            border-color: #22a45a;
+            box-shadow: 0 6px 15px rgba(34, 164, 90, 0.15);
+        }
+        
+        .scenario-card.active {
+            border-color: #22a45a;
+            background: linear-gradient(135deg, #e8f7ed 0%, #d4f1e0 100%);
+        }
+        
+        .scenario-icon {
+            width: 50px;
+            height: 50px;
+            background: #22a45a;
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .scenario-card h3 {
+            color: #1a7c48;margin-bottom: 8px;
+        }
+        
+        .scenario-card p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* Чат-контейнер */
+        .chat-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+        }
+        
+        .chat-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f0f5f1;
+            background: white;
+        }
+        
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .chat-title i {
+            font-size: 24px;
+            color: #22a45a;
+        }
+        
+        .chat-title h2 {
+            color: #1a7c48;
+        }
+        
+        .chat-subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: #f8fdf9;
+            border-radius: 10px;
+            border-left: 4px solid #22a45a;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            background: #22a45a;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .messages-container {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: #fafdfb;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .message {
+            max-width: 75%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-bot {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e8f5e9;
+            border-top-left-radius: 4px;
+        }
+        
+        .message-user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #22a45a, #1a7c48);
+            color: white;
+            border-top-right-radius: 4px;
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .message-bot .message-header {
+            color: #22a45a;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+        
+        .message-user .message-time {
+            text-align: right;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        /* Индикатор поиска в RAG */
+        .rag-search {
+            background: #f0f9f2;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid #22a45a;
+        }
+        
+        .search-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            color: #555;
+        }
+        
+        .search-step i {
+            color: #22a45a;
+            width: 20px;
+        }.source-info {
+            background: #f8fdf9;
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #555;
+            border: 1px dashed #c8e6c9;
+        }
+        
+        .source-info i {
+            color: #22a45a;
+            margin-right: 8px;
+        }
+        
+        /* Быстрые вопросы */
+        .quick-questions {
+            padding: 15px 25px;
+            border-top: 1px solid #f0f5f1;
+            background: white;
+        }
+        
+        .quick-questions h4 {
+            color: #1a7c48;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .quick-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .quick-btn {
+            padding: 10px 18px;
+            background: #f0f9f2;
+            border: 1px solid #d4e8d9;
+            border-radius: 20px;
+            color: #1a7c48;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-btn:hover {
+            background: #e2f0e6;
+            transform: translateY(-1px);
+        }
+        
+        /* Поле ввода */
+        .input-area {
+            padding: 20px 25px;
+            border-top: 1px solid #f0f5f1;
+            background: white;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e8f5e9;
+            border-radius: 12px;
+            font-size: 15px;
+            resize: none;
+            min-height: 60px;
+            max-height: 120px;
+            transition: border-color 0.3s;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: #22a45a;
+        }
+        
+        .input-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            border: none;
+            background: #f0f9f2;
+            color: #22a45a;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #22a45a;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .send-btn {
+            background: #22a45a;
+            color: white;
+        }
+        
+        .send-btn:hover {
+            background: #1a7c48;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .scenario-panel {
+                order: 2;
+            }
+            
+            .chat-container {
+                height: 600px;
+            }
+        }
+        
+        /* Специальный блок для перехода к админу */
+        .admin-transfer {
+            background: linear-gradient(135deg, #fff8e1, #ffecb3);
+            border: 2px solid #ffd54f;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .admin-transfer h4 {
+            color: #f57c00;
+            margin-bottom: 10px;
+        }
+        
+        .transfer-btn {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;transition: all 0.3s;
+        }
+        
+        .transfer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 124, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <header class="sber-header">
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-university"></i>
+                СБЕР
+            </div>
+            <span style="opacity: 0.9;">AI-помощник клиента</span>
+        </div>
+        <div class="user-info">
+            <div class="avatar">
+                ИИ
+            </div>
+            <div>
+                <div style="font-weight: 600;">Иван Петров</div>
+                <div style="font-size: 12px; opacity: 0.8;">Клиент Premium</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <div class="main-container">
+        <!-- Панель выбора сценария -->
+        <div class="scenario-panel">
+            <h2>Выберите тип вопроса</h2>
+            
+            <div class="scenario-card active" data-scenario="simple">
+                <div class="scenario-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3>Простой вопрос</h3>
+                <p>Бот ответит моментально, используя базу знаний банка (RAG-технология)</p>
+                <ul style="margin-top: 10px; padding-left: 20px; color: #666; font-size: 13px;">
+                    <li>Баланс и операции</li>
+                    <li>Курсы валют</li>
+                    <li>График работы отделений</li>
+                </ul>
+            </div>
+            
+            <div class="scenario-card" data-scenario="complex">
+                <div class="scenario-icon" style="background: #8e44ad;">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h3>Сложный вопрос</h3>
+                <p>Подключение к специалисту банка для решения нестандартных ситуаций</p>
+                <ul style="margin-top: 10px; padding-left: 20px; color: #666; font-size: 13px;">
+                    <li>Юридические консультации</li>
+                    <li>Сложные финансовые операции</li>
+                    <li>Индивидуальные условия</li>
+                </ul>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #f0f9f2; border-radius: 12px;">
+                <h4 style="color: #1a7c48; margin-bottom: 10px;">📊 Статистика</h4>
+                <div style="font-size: 14px; color: #555;">
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                        <span>Быстрые ответы:</span>
+                        <span style="font-weight: 600; color: #22a45a;">92%</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                        <span>Точность RAG:</span>
+                        <span style="font-weight: 600; color: #22a45a;">88%</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 8px 0;">
+                        <span>Время ответа:</span>
+                        <span style="font-weight: 600; color: #22a45a;">3.2 сек</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Чат-контейнер -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <i class="fas fa-comments"></i>
+                    <div>
+                        <h2>Чат с AI-помощником</h2>
+                        <div class="chat-subtitle">Сценарий: <span id="currentScenario">Простой вопрос (RAG)</span></div>
+                    </div></div>
+                <div class="chat-status">
+                    <div class="status-indicator"></div>
+                    <span id="statusText">Бот онлайн и готов помочь</span>
+                </div>
+            </div>
+            
+            <div class="messages-container" id="messagesContainer">
+                <!-- Приветственное сообщение -->
+                <div class="message message-bot">
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i>
+                        <span>AI-помощник Сбера</span>
+                    </div>
+                    <div class="message-text">
+                        Здравствуйте! Я AI-помощник Сбербанка. 
+                        Выберите тип вопроса слева, и я помогу вам:
+                        <ul style="margin-top: 10px; padding-left: 20px;">
+                            <li>📊 Проверить баланс и операции</li>
+                            <li>💱 Узнать курсы валют</li>
+                            <li>🏦 Найти отделения банка</li>
+                            <li>📄 Ответить на вопросы по документам</li>
+                        </ul>
+                    </div>
+                    <div class="message-time">10:00</div>
+                </div>
+                
+                <!-- Пример RAG-поиска -->
+                <div class="message message-bot">
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i>
+                        <span>AI-помощник Сбера</span>
+                    </div>
+                    <div class="message-text">
+                        <strong>Пример работы RAG-системы:</strong><br><br>
+                        Когда вы спрашиваете о чем-то, я ищу информацию в базе знаний Сбера:
+                        
+                        <div class="rag-search">
+                            <div class="search-step">
+                                <i class="fas fa-search"></i>
+                                <span>Ищу в документах Сбербанка...</span>
+                            </div>
+                            <div class="search-step">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Найдено 5 релевантных документов</span>
+                            </div>
+                            <div class="search-step">
+                                <i class="fas fa-brain"></i>
+                                <span>Анализирую и формулирую ответ...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="source-info">
+                            <i class="fas fa-file-contract"></i>
+                            Источник: "Тарифы на обслуживание карт", раздел 2.4, актуально на 2024 год
+                        </div>
+                    </div>
+                    <div class="message-time">10:01</div>
+                </div>
+            </div>
+            
+            <!-- Быстрые вопросы -->
+            <div class="quick-questions">
+                <h4>Частые вопросы:</h4>
+                <div class="quick-buttons">
+                    <button class="quick-btn" onclick="askQuestion('Какой курс доллара?')">💱 Курс доллара</button>
+                    <button class="quick-btn" onclick="askQuestion('График работы моего отделения?')">🏦 График работы</button>
+                    <button class="quick-btn" onclick="askQuestion('Как перевести деньги?')">💳 Перевод средств</button>
+                    <button class="quick-btn" onclick="askQuestion('Какие документы для ипотеки?')">🏠 Документы для ипотеки</button>
+                </div>
+            </div>
+            
+            <!-- Блок перехода к админу (только для сложных вопросов) -->
+            <div id="adminBlock" class="admin-transfer" style="display: none;"><h4>⚠️ Требуется помощь специалиста</h4>
+                <p>Ваш вопрос слишком сложен для AI. Нажмите кнопку ниже для подключения к специалисту банка.</p>
+                <button class="transfer-btn" onclick="connectToAdmin()">
+                    <i class="fas fa-user-tie"></i> Подключить специалиста
+                </button>
+                <p style="font-size: 12px; margin-top: 10px; color: #666;">
+                    Среднее время ожидания: 2-5 минут
+                </p>
+            </div>
+            
+            <!-- Поле ввода -->
+            <div class="input-area">
+                <textarea 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Введите ваш вопрос..."
+                    onkeydown="handleKeyDown(event)"
+                ></textarea>
+                <div class="input-actions">
+                    <button class="action-btn" title="Прикрепить файл">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <button class="action-btn send-btn" onclick="sendMessage()" title="Отправить">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+    <script>
+        // Текущий сценарий
+        let currentScenario = 'simple';
+        
+        // Элементы DOM
+        const scenarioCards = document.querySelectorAll('.scenario-card');
+        const currentScenarioText = document.getElementById('currentScenario');
+        const statusText = document.getElementById('statusText');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const adminBlock = document.getElementById('adminBlock');
+        
+        // Переключение сценариев
+        scenarioCards.forEach(card => {
+            card.addEventListener('click', () => {
+                scenarioCards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                currentScenario = card.dataset.scenario;
+                
+                if (currentScenario === 'simple') {
+                    currentScenarioText.textContent = 'Простой вопрос (RAG)';
+                    statusText.textContent = 'Бот онлайн и готов помочь';
+                    adminBlock.style.display = 'none';
+                    messageInput.placeholder = 'Введите ваш вопрос (бот ответит через RAG)...';
+                } else {
+                    currentScenarioText.textContent = 'Сложный вопрос (специалист)';
+                    statusText.textContent = 'Требуется подключение специалиста';
+                    adminBlock.style.display = 'block';
+                    messageInput.placeholder = 'Опишите проблему для специалиста...';
+                }
+            });
+        });
+        
+        // Отправка сообщения
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+            
+            // Добавляем сообщение пользователя
+            addMessage(text, 'user');
+            messageInput.value = '';
+            
+            // Имитация ответа
+            setTimeout(() => {
+                if (currentScenario === 'simple') {
+                    // Ответ через RAG
+                    simulateRAGResponse(text);
+                } else {
+                    // Ответ о подключении к админу
+                    addAdminResponse(text);
+                }
+            }, 1000);
+        }
+        
+        // Быстрые вопросы
+        function askQuestion(question) {
+            messageInput.value = question;
+            sendMessage();
+        }
+        
+        // Имитация RAG-ответа
+        function simulateRAGResponse(question) {const botMessage = document.createElement('div');
+            botMessage.className = 'message message-bot';
+            botMessage.innerHTML = `
+                <div class="message-header">
+                    <i class="fas fa-robot"></i>
+                    <span>AI-помощник Сбера</span>
+                </div>
+                <div class="message-text">
+                    <strong>Вопрос:</strong> "${question}"<br><br>
+                    
+                    <div class="rag-search">
+                        <div class="search-step">
+                            <i class="fas fa-search"></i>
+                            <span>Ищу в базе знаний Сбера...</span>
+                        </div>
+                        <div class="search-step">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Найдено 3 релевантных документа</span>
+                        </div>
+                        <div class="search-step">
+                            <i class="fas fa-brain"></i>
+                            <span>Формулирую ответ на основе источников...</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px;">
+                        <strong>Ответ:</strong><br>
+                        ${getRAGAnswer(question)}
+                    </div>
+                    
+                    <div class="source-info">
+                        <i class="fas fa-file-contract"></i>
+                        Источник: "База знаний Сбербанка 2024", раздел 4.2, точность: 92%
+                    </div>
+                </div>
+                <div class="message-time">${getCurrentTime()}</div>`
+            ;
+            
+            messagesContainer.appendChild(botMessage);
+            scrollToBottom();
+        }
+        
+        // Ответ для сложного сценария
+        function addAdminResponse(question) {
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message message-bot';
+            botMessage.innerHTML = `
+                <div class="message-header">
+                    <i class="fas fa-robot"></i>
+                    <span>AI-помощник Сбера</span>
+                </div>
+                <div class="message-text">
+                    Ваш вопрос: "<strong>${question}</strong>"<br><br>
+                    ⚠️ Этот вопрос требует консультации специалиста банка.<br>
+                    Я отправил ваш запрос в отдел поддержки.<br><br>
+                    <strong>Статус:</strong> Ожидание подключения специалиста<br>
+                    <strong>Очередь:</strong> 2 человека перед вами<br>
+                    <strong>Примерное время:</strong> 3-5 минут
+                </div>
+                <div class="message-time">${getCurrentTime()}</div>`
+            ;
+            
+            messagesContainer.appendChild(botMessage);
+            scrollToBottom();
+        }
+        
+        // Подключение к админу
+        function connectToAdmin() {
+            const botMessage = document.createElement('div');
+            botMessage.className = 'message message-bot';
+            botMessage.innerHTML = `
+                <div class="message-header">
+                    <i class="fas fa-robot"></i>
+                    <span>AI-помощник Сбера</span>
+                </div>
+                <div class="message-text">
+                    <div style="color: #1a7c48; font-weight: 600;">
+                        <i class="fas fa-check-circle"></i> Запрос отправлен успешно!
+                    </div><br>
+                    Вас подключили к специалисту. Перейдите на 
+                    <a href="admin.html" style="color: #22a45a; font-weight: 600;">страницу администратора</a>
+                    чтобы увидеть интерфейс ответа.</div>
+                <div class="message-time">${getCurrentTime()}</div>`
+            ;
+            
+            messagesContainer.appendChild(botMessage);
+            scrollToBottom();
+        }
+        
+        // Добавление сообщения пользователя
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message message-${sender}`;
+            messageDiv.innerHTML = `
+                <div class="message-text">${text}</div>
+                <div class="message-time">${getCurrentTime()}</div>`
+            ;
+            
+            messagesContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        // Генерация RAG-ответов
+        function getRAGAnswer(question) {
+            const answers = {
+                'курс': 'Текущий курс доллара США: 92.45 руб., евро: 99.80 руб. Курсы обновляются ежедневно в 10:00 по московскому времени.',
+                'график': 'Отделения Сбера работают с 09:00 до 20:00 по будням, с 10:00 до 17:00 по субботам. Воскресенье — выходной.',
+                'перевод': 'Для перевода денег: 1. Войдите в СберБанк Онлайн 2. Выберите "Переводы" 3. Введите реквизиты 4. Подтвердите SMS. Комиссия: 1.5%, но не менее 30 руб.',
+                'баланс': 'Для проверки баланса войдите в СберБанк Онлайн или мобильное приложение. Также можете воспользоваться банкоматом или позвонить на 900.',
+                'ипотека': 'Для ипотеки нужны: паспорт, справка 2-НДФЛ, выписка из ЕГРН. Ставки от 8.5% годовых. Срок рассмотрения: 3-5 рабочих дней.'
+            };
+            
+            for (const [key, answer] of Object.entries(answers)) {
+                if (question.toLowerCase().includes(key)) {
+                    return answer;
+                }
+            }
+            
+            return 'На основании анализа документов Сбербанка могу ответить: это стандартная процедура, требующая посещения отделения с паспортом. Для уточнения деталей рекомендую обратиться в ближайшее отделение.';
+        }
+        
+        // Вспомогательные функции
+        function getCurrentTime() {
+            const now = new Date();
+            return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        }
+        
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+    </script>
+</html>

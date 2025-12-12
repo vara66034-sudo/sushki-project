@@ -631,202 +631,147 @@
     </div>
 </body>
     <script>
-        // Текущий сценарий
-        let currentScenario = 'simple';
-        
-        // Элементы DOM
-        const scenarioCards = document.querySelectorAll('.scenario-card');
-        const currentScenarioText = document.getElementById('currentScenario');
-        const statusText = document.getElementById('statusText');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageInput = document.getElementById('messageInput');
-        const adminBlock = document.getElementById('adminBlock');
-        
-        // Переключение сценариев
-        scenarioCards.forEach(card => {
-            card.addEventListener('click', () => {
-                scenarioCards.forEach(c => c.classList.remove('active'));
-                card.classList.add('active');
-                currentScenario = card.dataset.scenario;
-                
-                if (currentScenario === 'simple') {
-                    currentScenarioText.textContent = 'Простой вопрос (RAG)';
-                    statusText.textContent = 'Бот онлайн и готов помочь';
-                    adminBlock.style.display = 'none';
-                    messageInput.placeholder = 'Введите ваш вопрос (бот ответит через RAG)...';
-                } else {
-                    currentScenarioText.textContent = 'Сложный вопрос (специалист)';
-                    statusText.textContent = 'Требуется подключение специалиста';
-                    adminBlock.style.display = 'block';
-                    messageInput.placeholder = 'Опишите проблему для специалиста...';
-                }
-            });
+    // Текущий сценарий
+    let currentScenario = 'simple';
+
+    // Элементы DOM
+    const scenarioCards = document.querySelectorAll('.scenario-card');
+    const currentScenarioText = document.getElementById('currentScenario');
+    const statusText = document.getElementById('statusText');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageInput = document.getElementById('messageInput');
+    const adminBlock = document.getElementById('adminBlock');
+
+    // Переключение сценариев
+    scenarioCards.forEach(card => {
+        card.addEventListener('click', () => {
+            scenarioCards.forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+            currentScenario = card.dataset.scenario;
+
+            if (currentScenario === 'simple') {
+                currentScenarioText.textContent = 'Простой вопрос (RAG)';
+                statusText.textContent = 'Бот онлайн и готов помочь';
+                adminBlock.style.display = 'none';
+                messageInput.placeholder = 'Введите ваш вопрос (бот ответит через RAG)...';
+            } else {
+                currentScenarioText.textContent = 'Сложный вопрос (специалист)';
+                statusText.textContent = 'Требуется подключение специалиста';
+                adminBlock.style.display = 'block';
+                messageInput.placeholder = 'Опишите проблему для специалиста...';
+            }
         });
-        
-        // Отправка сообщения
-        function sendMessage() {
-            const text = messageInput.value.trim();
-            if (!text) return;
-            
-            // Добавляем сообщение пользователя
-            addMessage(text, 'user');
-            messageInput.value = '';
-            
-            // Имитация ответа
-            setTimeout(() => {
-                if (currentScenario === 'simple') {
-                    // Ответ через RAG
-                    simulateRAGResponse(text);
-                } else {
-                    // Ответ о подключении к админу
-                    addAdminResponse(text);
-                }
-            }, 1000);
+    });
+
+    // Отправка сообщения
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        // Добавляем сообщение пользователя
+        addMessage(text, 'user');
+        messageInput.value = '';
+
+        if (currentScenario === 'complex') {
+            // Сложный вопрос — показываем блок админа
+            addAdminResponse(text);
+            return;
         }
+
+        try {
+            // Отправляем на бекенд
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+
+            const data = await response.json();
+            addMessage(data.answer, 'bot');
+        } catch (error) {
+            addMessage('Ошибка сервера. Попробуйте позже.', 'bot');
+            console.error(error);
+        }
+
+        scrollToBottom();
+    }
+
+    // Быстрые вопросы
+    function askQuestion(question) {
+        messageInput.value = question;
+        sendMessage();
+    }
+
+    // Ответ для сложного сценария (админ)
+    function addAdminResponse(question) {
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message message-bot';
+        botMessage.innerHTML = `
+            <div class="message-header">
+                <i class="fas fa-robot"></i>
+                <span>AI-помощник Сбера</span>
+            </div>
+            <div class="message-text">
+                Ваш вопрос: "<strong>${question}</strong>"<br><br>
+                ⚠️ Этот вопрос требует консультации специалиста банка.<br>
+                Перейдите к специалисту, используя блок ниже.<br>
+            </div>
+            <div class="message-time">${getCurrentTime()}</div>`;
         
-        // Быстрые вопросы
-        function askQuestion(question) {
-            messageInput.value = question;
+        messagesContainer.appendChild(botMessage);
+        scrollToBottom();
+    }
+
+    // Подключение к админу
+    function connectToAdmin() {
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message message-bot';
+        botMessage.innerHTML = `
+            <div class="message-header">
+                <i class="fas fa-robot"></i>
+                <span>AI-помощник Сбера</span>
+            </div>
+            <div class="message-text">
+                <div style="color: #1a7c48; font-weight: 600;">
+                    <i class="fas fa-check-circle"></i> Запрос отправлен успешно!
+                </div><br>
+                Вас подключили к специалисту. Перейдите на 
+                <a href="admin.html" style="color: #22a45a; font-weight: 600;">страницу администратора</a>
+                чтобы увидеть интерфейс ответа.
+            </div>
+            <div class="message-time">${getCurrentTime()}</div>`;
+        
+        messagesContainer.appendChild(botMessage);
+        scrollToBottom();
+    }
+
+    // Добавление сообщения в чат
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message message-${sender}`;
+        messageDiv.innerHTML = `
+            <div class="message-text">${text}</div>
+            <div class="message-time">${getCurrentTime()}</div>`;
+        
+        messagesContainer.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Вспомогательные функции
+    function getCurrentTime() {
+        const now = new Date();
+        return `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
             sendMessage();
         }
-        
-        // Имитация RAG-ответа
-        function simulateRAGResponse(question) {const botMessage = document.createElement('div');
-            botMessage.className = 'message message-bot';
-            botMessage.innerHTML = `
-                <div class="message-header">
-                    <i class="fas fa-robot"></i>
-                    <span>AI-помощник Сбера</span>
-                </div>
-                <div class="message-text">
-                    <strong>Вопрос:</strong> "${question}"<br><br>
-                    
-                    <div class="rag-search">
-                        <div class="search-step">
-                            <i class="fas fa-search"></i>
-                            <span>Ищу в базе знаний Сбера...</span>
-                        </div>
-                        <div class="search-step">
-                            <i class="fas fa-file-alt"></i>
-                            <span>Найдено 3 релевантных документа</span>
-                        </div>
-                        <div class="search-step">
-                            <i class="fas fa-brain"></i>
-                            <span>Формулирую ответ на основе источников...</span>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 15px;">
-                        <strong>Ответ:</strong><br>
-                        ${getRAGAnswer(question)}
-                    </div>
-                    
-                    <div class="source-info">
-                        <i class="fas fa-file-contract"></i>
-                        Источник: "База знаний Сбербанка 2024", раздел 4.2, точность: 92%
-                    </div>
-                </div>
-                <div class="message-time">${getCurrentTime()}</div>`
-            ;
-            
-            messagesContainer.appendChild(botMessage);
-            scrollToBottom();
-        }
-        
-        // Ответ для сложного сценария
-        function addAdminResponse(question) {
-            const botMessage = document.createElement('div');
-            botMessage.className = 'message message-bot';
-            botMessage.innerHTML = `
-                <div class="message-header">
-                    <i class="fas fa-robot"></i>
-                    <span>AI-помощник Сбера</span>
-                </div>
-                <div class="message-text">
-                    Ваш вопрос: "<strong>${question}</strong>"<br><br>
-                    ⚠️ Этот вопрос требует консультации специалиста банка.<br>
-                    Я отправил ваш запрос в отдел поддержки.<br><br>
-                    <strong>Статус:</strong> Ожидание подключения специалиста<br>
-                    <strong>Очередь:</strong> 2 человека перед вами<br>
-                    <strong>Примерное время:</strong> 3-5 минут
-                </div>
-                <div class="message-time">${getCurrentTime()}</div>`
-            ;
-            
-            messagesContainer.appendChild(botMessage);
-            scrollToBottom();
-        }
-        
-        // Подключение к админу
-        function connectToAdmin() {
-            const botMessage = document.createElement('div');
-            botMessage.className = 'message message-bot';
-            botMessage.innerHTML = `
-                <div class="message-header">
-                    <i class="fas fa-robot"></i>
-                    <span>AI-помощник Сбера</span>
-                </div>
-                <div class="message-text">
-                    <div style="color: #1a7c48; font-weight: 600;">
-                        <i class="fas fa-check-circle"></i> Запрос отправлен успешно!
-                    </div><br>
-                    Вас подключили к специалисту. Перейдите на 
-                    <a href="admin.html" style="color: #22a45a; font-weight: 600;">страницу администратора</a>
-                    чтобы увидеть интерфейс ответа.</div>
-                <div class="message-time">${getCurrentTime()}</div>`
-            ;
-            
-            messagesContainer.appendChild(botMessage);
-            scrollToBottom();
-        }
-        
-        // Добавление сообщения пользователя
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message message-${sender}`;
-            messageDiv.innerHTML = `
-                <div class="message-text">${text}</div>
-                <div class="message-time">${getCurrentTime()}</div>`
-            ;
-            
-            messagesContainer.appendChild(messageDiv);
-            scrollToBottom();
-        }
-        
-        // Генерация RAG-ответов
-        function getRAGAnswer(question) {
-            const answers = {
-                'курс': 'Текущий курс доллара США: 92.45 руб., евро: 99.80 руб. Курсы обновляются ежедневно в 10:00 по московскому времени.',
-                'график': 'Отделения Сбера работают с 09:00 до 20:00 по будням, с 10:00 до 17:00 по субботам. Воскресенье — выходной.',
-                'перевод': 'Для перевода денег: 1. Войдите в СберБанк Онлайн 2. Выберите "Переводы" 3. Введите реквизиты 4. Подтвердите SMS. Комиссия: 1.5%, но не менее 30 руб.',
-                'баланс': 'Для проверки баланса войдите в СберБанк Онлайн или мобильное приложение. Также можете воспользоваться банкоматом или позвонить на 900.',
-                'ипотека': 'Для ипотеки нужны: паспорт, справка 2-НДФЛ, выписка из ЕГРН. Ставки от 8.5% годовых. Срок рассмотрения: 3-5 рабочих дней.'
-            };
-            
-            for (const [key, answer] of Object.entries(answers)) {
-                if (question.toLowerCase().includes(key)) {
-                    return answer;
-                }
-            }
-            
-            return 'На основании анализа документов Сбербанка могу ответить: это стандартная процедура, требующая посещения отделения с паспортом. Для уточнения деталей рекомендую обратиться в ближайшее отделение.';
-        }
-        
-        // Вспомогательные функции
-        function getCurrentTime() {
-            const now = new Date();
-            return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        }
-        
-        function scrollToBottom() {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-        function handleKeyDown(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-    </script>
+    }
+</script>
 </html>

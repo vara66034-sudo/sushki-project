@@ -531,161 +531,193 @@
     </div>
 
     <script>
-        // === [API] ВСЕ ФУНКЦИИ ВЗАИМОДЕЙСТВУЮТ С БЭКЕНДОМ ЧЕРЕЗ REST/GraphQL ===
+    // === Утилиты ===
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 14px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+            font-size: 15px;
+        `;
+        const colors = { success:'#4CAF50', error:'#F44336', warning:'#FF9800', info:'#2196F3' };
+        notification.style.background = colors[type] || '#333';
+        notification.textContent = message;
+        document.body.appendChild(notification);
 
-        function updateStats() {
-            const stats = {
-                onlineUsers: Math.floor(Math.random() * 50) + 140,
-                activeChats: Math.floor(Math.random() * 20) + 80,
-                ragAccuracy: (Math.random() * 5 + 90).toFixed(1),
-                responseTime: (Math.random() * 1 + 2.5).toFixed(1),
-                adminTransfers: Math.floor(Math.random() * 10) + 15,
-                satisfaction: Math.floor(Math.random() * 5) + 92
-            };
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
 
-            Object.entries(stats).forEach(([id, value]) => {
-                const element = document.getElementById(id);
-                if (!element) return;
-
-                const currentStr = element.textContent.replace('%', '').replace('с', '');
-                const current = parseFloat(currentStr);
-                if (isNaN(current)) return;
-
-                const diff = value - current;
-                const step = diff / 15;
-                let count = current;
-                const timer = setInterval(() => {
-                    count += step;
-                    const isDone = (step > 0 && count >= value) || (step < 0 && count <= value);
-                    if (isDone) {
-                        count = value;
-                        clearInterval(timer);
-                    }
-
-                    if (id.includes('Time')) {
-                        element.textContent = count.toFixed(1) + 'с';
-                    } else if (['ragAccuracy', 'adminTransfers', 'satisfaction'].includes(id)) {
-                        element.textContent = count.toFixed(1) + '%';
-                    } else {
-                        element.textContent = Math.round(count);
-                    }
-                }, 40);
+    // === Отправка запроса к API ===
+    async function postAPI(url, data, successMsg, errorMsg) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             });
+            const json = await res.json();
+            if(json.success) showNotification(successMsg, 'success');
+            else showNotification(errorMsg, 'error');
+            return json;
+        } catch(e) {
+            showNotification('Ошибка соединения с сервером', 'error');
         }
+    }
 
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 14px 24px;
-                border-radius: 12px;
-                color: white;
-                font-weight: 600;
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-                box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-                font-size: 15px;
-            `;
+    // === Функции кнопок ===
+    function trainBot() {
+        showNotification('Отправка запроса на обучение модели...', 'info');
+        postAPI('/api/bot/train', {}, 'Обучение завершено! Точность увеличена.', 'Ошибка обучения модели')
+            .then(() => updateStats());
+    }
 
-            const colors = {
-                success: '#4CAF50',
-                error: '#F44336',
-                warning: '#FF9800',
-                info: '#2196F3'
-            };
-            notification.style.background = colors[type] || '#333';
-            notification.textContent = message;
-            document.body.appendChild(notification);
+    function updateKnowledgeBase() {
+        showNotification('Обновление базы знаний...', 'info');
+        postAPI('/api/knowledge/update', {}, 'База знаний обновлена!', 'Ошибка обновления базы знаний');
+    }
 
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
+    function botSettings() {
+        // GET-запрос для настроек
+        fetch('/api/rag/settings')
+            .then(res => res.json())
+            .then(data => showNotification('Настройки загружены', 'success'))
+            .catch(() => showNotification('Ошибка получения настроек', 'error'));
+    }
 
-        // Пример подключения к API (в реальности — fetch или axios)
-        function trainBot() {
-            showNotification('Отправка запроса на обучение модели...', 'info');
-            // fetch('/api/bot/train', { method: 'POST', ... })
-            setTimeout(() => {
-                showNotification('Обучение завершено! Точность увеличена на 3.2%', 'success');
-                updateStats();
-            }, 2000);
-        }
-
-        function updateKnowledgeBase() {
-            showNotification('Обновление базы знаний...', 'info');
-            setTimeout(() => {
-                showNotification('База знаний обновлена! Добавлено 124 новых документа', 'success');
-            }, 1500);
-        }
-
-        function takeNextRequest() {
-            showNotification('Запрос на получение следующего обращения...', 'info');
-            setTimeout(() => {
-                showNotification('Обращение назначено вам', 'success');
+    function takeNextRequest() {
+        postAPI('/api/requests/assign-next', {}, 'Обращение назначено вам', 'Нет обращений в очереди')
+            .then(() => {
                 const pending = document.querySelector('.status-pending');
-                if (pending) {
+                if(pending) {
                     pending.className = 'request-status status-processing';
                     pending.innerHTML = '<i class="fas fa-spinner fa-spin"></i> В обработке';
                 }
-            }, 800);
+            });
+    }
+
+    function reassignRequest() {
+        postAPI('/api/requests/reassign', {}, 'Обращения перераспределены', 'Ошибка перераспределения');
+    }
+
+    function viewAllRequests() {
+        fetch('/api/requests')
+            .then(res => res.json())
+            .then(data => showNotification('Загружены все обращения', 'success'))
+            .catch(() => showNotification('Ошибка загрузки обращений', 'error'));
+    }
+
+    function reviewAnswers() {
+        postAPI('/api/answers/review', {}, 'Проверка завершена', 'Ошибка проверки');
+    }
+
+    function addCorrectAnswer() {
+        const answer = prompt('Введите правильный ответ для добавления в базу знаний:');
+        if(!answer) return;
+        postAPI('/api/knowledge/add', { answer }, 'Ответ добавлен', 'Ошибка добавления ответа');
+    }
+
+    function blockIncorrectAnswer() {
+        const answer = prompt('Введите неверный ответ для блокировки:');
+        if(!answer) return;
+        postAPI('/api/answers/block', { answer }, 'Ответ заблокирован', 'Ошибка блокировки');
+    }
+
+    function emergencyStop() {
+        if(confirm('Остановить всех ботов?')) {
+            postAPI('/api/bot/stop-all', {}, 'Все боты остановлены', 'Ошибка остановки ботов');
         }
+    }
 
-        function reviewAnswers() {
-            showNotification('Запрос на проверку ответов...', 'info');
-            setTimeout(() => {
-                showNotification('Проверка завершена. Найдено 3 некорректных ответа', 'warning');
-            }, 2500);
+    function switchToManual() {
+        postAPI('/api/mode/manual', {}, 'Система переведена в ручной режим', 'Ошибка переключения режима');
+    }
+
+    function systemReboot() {
+        if(confirm('Перезапустить систему?')) {
+            postAPI('/api/system/reboot', {}, 'Система перезапущена', 'Ошибка перезапуска');
         }
+    }
 
-        function emergencyStop() {
-            if (confirm('Остановить всех ботов? Все активные диалоги будут прерваны.')) {
-                showNotification('⚠️ ВСЕ БОТЫ ОСТАНОВЛЕНЫ! Активирован ручной режим.', 'error');
-                // fetch('/api/bot/stop-all', { method: 'POST' })
-            }
-        }
+    function sendReply() {
+        const replyText = document.getElementById('adminReplyText').textContent;
+        const requestId = 1; // подставить реальный ID
+        postAPI('/api/chat/send', { requestId, message: replyText }, 'Ответ отправлен пользователю', 'Ошибка при отправке ответа')
+            .then(() => {
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+                document.getElementById('replyTime').textContent = timeStr;
+            });
+    }
 
-        function sendReply() {
-            const now = new Date();
-            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-            document.getElementById('replyTime').textContent = timeStr;
-            showNotification('Ответ отправлен пользователю', 'success');
-        }
+    function requestDocuments() {
+        const requestId = 1; // подставить реальный ID
+        postAPI('/api/documents/request', { requestId }, 'Запрос на документы отправлен', 'Ошибка запроса документов');
+    }
 
-        function requestDocuments() {
-            showNotification('Запрос на документы отправлен', 'info');
-        }
-
-        function closeRequest() {
-            const processing = document.querySelector('.status-processing');
-            if (processing) {
-                processing.className = 'request-status status-completed';
-                processing.innerHTML = '<i class="fas fa-check-circle"></i> Завершено';
-                showNotification('Обращение закрыто', 'success');
-            }
-        }
-
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', () => {
-            updateStats();
-            setInterval(updateStats, 10000);
-
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideIn {
-                    from { transform: translateX(120%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
+    function closeRequest() {
+        const requestId = 1; // подставить реальный ID
+        postAPI('/api/requests/close', { requestId }, 'Обращение закрыто', 'Ошибка при закрытии обращения')
+            .then(() => {
+                const processing = document.querySelector('.status-processing');
+                if(processing) {
+                    processing.className = 'request-status status-completed';
+                    processing.innerHTML = '<i class="fas fa-check-circle"></i> Завершено';
                 }
-                @keyframes slideOut {
-                    from { transform: translateX(0); opacity: 1; }
-                    to { transform: translateX(120%); opacity: 0; }
-                }
-            `;
-            document.head.appendChild(style);
+            });
+    }
+
+    // === Статистика ===
+    function updateStats() {
+        const stats = {
+            onlineUsers: Math.floor(Math.random() * 50) + 140,
+            activeChats: Math.floor(Math.random() * 20) + 80,
+            ragAccuracy: (Math.random() * 5 + 90).toFixed(1),
+            responseTime: (Math.random() * 1 + 2.5).toFixed(1),
+            adminTransfers: Math.floor(Math.random() * 10) + 15,
+            satisfaction: Math.floor(Math.random() * 5) + 92
+        };
+        Object.entries(stats).forEach(([id, value]) => {
+            const el = document.getElementById(id);
+            if(!el) return;
+            const currentStr = el.textContent.replace('%','').replace('с','');
+            const current = parseFloat(currentStr);
+            if(isNaN(current)) return;
+            const step = (value - current) / 15;
+            let count = current;
+            const timer = setInterval(() => {
+                count += step;
+                const done = (step>0 && count>=value) || (step<0 && count<=value);
+                if(done) { count=value; clearInterval(timer); }
+                if(id.includes('Time')) el.textContent = count.toFixed(1)+'с';
+                else if(['ragAccuracy','adminTransfers','satisfaction'].includes(id)) el.textContent = count.toFixed(1)+'%';
+                else el.textContent = Math.round(count);
+            },40);
         });
-    </script>
+    }
+
+    // === Инициализация ===
+    document.addEventListener('DOMContentLoaded', () => {
+        updateStats();
+        setInterval(updateStats, 10000);
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+            @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
 </body>
 </html>

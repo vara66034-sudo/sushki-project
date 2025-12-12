@@ -3,7 +3,8 @@ import os
 
 giga = GigaChat(
    credentials=os.getenv('GIGACHAT_API_KEY', ''),
-   verify_ssl_certs=False
+   model=os.getenv('GIGACHAT_MODEL', ''),
+   verify_ssl_certs=False,
 )
 
 def sendMessageFromBackend(text: str) -> str:

@@ -27,7 +27,7 @@ class ChatMessage(BaseModel):
     text: str
 
 # --- Эндпоинт для чата ---
-@app.get("/api/chat")
+@app.post("/api/chat")
 async def chat_endpoint(message: ChatMessage):
     try:
         # Отправляем текст в GigaChat через твою функцию
